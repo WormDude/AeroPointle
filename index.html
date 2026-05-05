@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AeroPointle – Pinpoint the Airport</title>
+    <link rel="icon" type="image/png" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBHxaZH0TIrc_pPL4ai7e00HbfqvhQE1MYdA&s">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+    font-family: Arial;
+    background: #121213;
+    color: white;
+    text-align: center;
+}
+
+input, button {
+    padding: 10px;
+    margin: 10px;
+}
+
+#guessTracker {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.guessBox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #666;
+}
+
+.used { background: red; }
+.correct { background: limegreen; }
+
+#hints {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.hintBox {
+    width: 180px;
+    padding: 10px;
+    background: #1a2f45;
+    opacity: 0.3;
+}
+
+.unlocked {
+    opacity: 1;
+    border: 2px solid lightgreen;
+}
+
+#suggestions {
+    max-width: 300px;
+    margin: auto;
+    background: #1a2f45;
+    border: 1px solid #444;
+
+    max-height: 200px;   /* show ~5 items */
+    overflow-y: auto;
+}
+
+.suggestion {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.suggestion:hover {
+    background: #2b4b6a;
+}
+</style>
+</head>
+
+<body>
+
+<h1>✈️ AeroPointle</h1>
+
+<input id="guessInput" placeholder="Type airport name or code">
+<div id="suggestions"></div>
+<button onclick="guess()">Guess</button>
+
+<div id="guessTracker"></div>
+<div id="log"></div>
+<div id="hints"></div>
+
+<script>
+
+/* =========================
+   ✈️ AIRPORTS
+   ========================= */
+
+const airports = [
+{
+    name: "Kitesboro International Airport",
+    code: "KKBI",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: 1.170008,
+    lon: -6.739044,
+    dealership: { exists: true, vehicles: 17 },
+    airportType: "International",
+    closestAirport: "Ardmore Aerodrome",
+    image: "https://static.wikia.nocookie.net/aeronautica/images/6/64/Kiteabove.png"
+},
+{
+    name: "Clarence International Airport",
+    code: "KCLA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: 0.505006,
+    lon: 2.39495,
+    dealership: { exists: true, vehicles: 25 },
+    airportType: "International",
+    closestAirport: "Gaston Airfield",
+    image: "https://static.wikia.nocookie.net/aeronautica/images/e/e1/New_clarence.png"
+},
+{
+    name: "Pembroke Plantation",
+    code: "KKPA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -1.162469,
+    lon: -2.389017,
+    dealership: { exists: true, vehicles: 7 },
+    airportType: "Aerodrome",
+    closestAirport: "Tom's Gambling Establishment",
+    image: "https://static.wikia.nocookie.net/aeronautica/images/5/56/PembrokePlantation.png"
+},
+{
+    name: "Ardmore Aerodrome",
+    code: "KAA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: 0.711428,
+    lon: -6.417203,
+    dealership: { exists: true, vehicles: 8 },
+    airportType: "Aerodrome",
+    closestAirport: "Kitesboro International Airport",
+    image: "https://static.wikia.nocookie.net/aeronautica/images/1/18/Ardmore_Aerodrome.png"
+},
+{
+    name: "Oconee Island Airport",
+    code: "KOIA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: 0.089661,
+    lon: -0.502486,
+    dealership: { exists: true, vehicles: 40 },
+    airportType: "Regional",
+    closestAirport: "First Flight Airfield",
+    image: "https://static.wikia.nocookie.net/aeronautica/images/4/4c/OCONEENEW.png"
+},
+{
+    name: "First Flight Airfield",
+    code: "KFFA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -0.290647,
+    lon: 0.010853,
+    dealership: { exists: false, vehicles: 0 },
+    airportType: "Airfield",
+    closestAirport: "Hampden Field",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/7/7e/First_Flight_Airfield.png"
+},
+{
+    name: "Hampden Field",
+    code: "KHF",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -0.1078,
+    lon: 0.740867,
+    dealership: { exists: true, vehicles: 5 },
+    airportType: "Airfield",
+    closestAirport: "First Flight Airfield",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/3/3a/NewHampden.png"
+},
+{
+    name: "Gaston Airfield",
+    code: "KGA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: 1.032117,
+    lon: 2.192597,
+    dealership: { exists: true, vehicles: 3 },
+    airportType: "Airfield",
+    closestAirport: "Clarence International Airport",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/thumb/9/9f/NewGaston.png/350px-NewGaston.png"
+},
+{
+    name: "Millsho Estate",
+    code: "KMEA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: 0.886989,
+    lon: 1.092964,
+    dealership: { exists: true, vehicles: 3 },
+    airportType: "Airfield",
+    closestAirport: "Gaston Airfield",
+    image: "https://static.wikia.nocookie.net/aeronautica/images/0/08/MillshoEstate.png/revision/latest?cb=20230322151821"
+},
+{
+    name: "Webley Island",
+    code: "MUWI",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: 1.08085,
+    lon: -2.901644,
+    dealership: { exists: true, vehicles: 3 },
+    airportType: "Airfield",
+    closestAirport: "Oconee Island Airport",
+    image: "https://static.wikia.nocookie.net/aeronautica/images/1/15/WEBLEY.png/revision/latest?cb=20220414010824"
+},
+{
+    name: "Tom's Totally Legitimate Gambling Establishment",
+    code: "TTLG",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -1.603667,
+    lon: -1.279303,
+    dealership: { exists: false, vehicles: 0 },
+    airportType: "Flying Aircraft Carrier",
+    closestAirport: "Fiskar Island Airport",
+    image: "https://static.wikia.nocookie.net/aeronautica/images/3/36/Toms.png/revision/latest?cb=20230325140431"
+},
+{
+    name: "Fiskar Island Airport",
+    code: "UHFI",
+    country: "Fiskar",
+    continent: "Oconia",
+    lat: -1.875414,
+    lon: -0.025422,
+    dealership: { exists: true, vehicles: 20 },
+    airportType: "Regional",
+    closestAirport: "Tom's Totally Legitimate Gambling Establishment",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/thumb/4/41/Fiskar_Island_Airport_1.png/350px-Fiskar_Island_Airport_1.png"
+},
+{
+    name: "Norman International Airport",
+    code: "KNIA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -2.498028,
+    lon: -10.288475,
+    dealership: { exists: true, vehicles: 26 },
+    airportType: "International",
+    closestAirport: "Primia Island Seaport",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/thumb/8/88/Norman_International_Airport_0.png/800px-Norman_International_Airport_0.png"
+},
+{
+    name: "Primia Island Seaport",
+    code: "KPIS",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -3.027881,
+    lon: -5.54935,
+    dealership: { exists: false, vehicles: 0 },
+    airportType: "Airfield",
+    closestAirport: "Lynwood JAFB",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/thumb/1/13/Primia_Island_Seaport_0.png/350px-Primia_Island_Seaport_0.png"
+},
+{
+    name: "Lynwood JAFB",
+    code: "KLAB",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -3.220456,
+    lon: -4.993019,
+    dealership: { exists: true, vehicles: 25 },
+    airportType: "Military / Airport",
+    closestAirport: "Primia Island Seaport",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/thumb/b/b3/Lynwood_JAFB_0.png/350px-Lynwood_JAFB_0.png"
+},
+{
+    name: "Lynwood Municipal Airport",
+    code: "LKMA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -2.955014,
+    lon: -3.585992,
+    dealership: { exists: true, vehicles: 8 },
+    airportType: "Regional",
+    closestAirport: "Lynwood JAFB",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/thumb/3/31/Lynwood_Municipal_Airport_0.png/350px-Lynwood_Municipal_Airport_0.png"
+},
+{
+    name: "Augustus Atoll Airport",
+    code: "NTAA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -5.003397,
+    lon: -3.218172,
+    dealership: { exists: true, vehicles: 3 },
+    airportType: "Regional",
+    closestAirport: "Lynwood JAFB",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/thumb/8/8e/Augustus_Atoll_Airport_0.png/350px-Augustus_Atoll_Airport_0.png"
+},
+{
+    name: "Eagle Island Estate",
+    code: "PMEA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -4.195494,
+    lon: 0.677178,
+    dealership: { exists: true, vehicles: 1 },
+    airportType: "Airfield",
+    closestAirport: "Saint Baralku",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/thumb/f/f1/Eagle_Island_Estate_New.png/350px-Eagle_Island_Estate_New.png"
+},
+{
+    name: "Castle Atoll Airport",
+    code: "NTCA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -5.366039,
+    lon: 4.845181,
+    dealership: { exists: true, vehicles: 6 },
+    airportType: "Military",
+    closestAirport: "Eagle Island Estate",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/thumb/3/3f/Castle_Atoll_Airport_0.png/350px-Castle_Atoll_Airport_0.png"
+},
+{
+    name: "Saint Baralku Airport",
+    code: "NTBA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -2.892361,
+    lon: 1.610814,
+    dealership: { exists: true, vehicles: 1 },
+    airportType: "Airport",
+    closestAirport: "Eagle Island Estate",
+    image: "https://media.discordapp.net/attachments/909254751424757820/1497975596997935334/image.png?ex=69ef79fd&is=69ee287d&hm=a48effa65f546c6993bd5fe45caf9bd0c6e5dc2cc8af82090fbd48ff7a075f9e&=&format=webp&quality=lossless"
+},
+{
+    name: "Harden International",
+    code: "KHIA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -2.368528,
+    lon: 6.031917,
+    dealership: { exists: true, vehicles: 16 },
+    airportType: "International",
+    closestAirport: "Kauwela Resort Airport",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/thumb/2/2b/Harden_International_2.png/800px-Harden_International_2.png"
+},
+{
+    name: "Kauwela Resort Airport",
+    code: "KKRA",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: -2.113008,
+    lon: 4.72375,
+    dealership: { exists: true, vehicles: 4 },
+    airportType: "Airport",
+    closestAirport: "Harden International",
+    image: "https://cdn.discordapp.com/attachments/909254751424757820/1497977245182988388/image.png?ex=69ef7b86&is=69ee2a06&hm=2523addef45a0cf810d8fdddc9a8afd788efc18403bd38423b4625b9a788cf15&"
+},
+{
+    name: "New Englandtown Regional Airport",
+    code: "KNET",
+    country: "United Isles of Oconia",
+    continent: "Oconia",
+    lat: 2.501944,
+    lon: 0.446378,
+    dealership: { exists: true, vehicles: 16 },
+    airportType: "Airport",
+    closestAirport: "Gaston Airfield",
+    image: "https://cdn.wikioasis.org/aeronauticawiki/thumb/2/2f/New_Englandtown_Regional_Airport_0.png/350px-New_Englandtown_Regional_Airport_0.png"
+},
+];
+
+
+/* =========================
+   🎯 GAME STATE
+   ========================= */
+
+const target = airports[Math.floor(Math.random() * airports.length)];
+const MAX = 7;
+
+let attempts = 0;
+let gameOver = false;
+let selectedFromDropdown = false;
+
+/* =========================
+   📊 GUESS TRACKER
+   ========================= */
+
+const tracker = document.getElementById("guessTracker");
+const boxes = [];
+
+for (let i = 0; i < MAX; i++) {
+    let b = document.createElement("div");
+    b.className = "guessBox";
+    tracker.appendChild(b);
+    boxes.push(b);
+}
+
+/* =========================
+   🧭 COMPASS (CLEAN)
+   ========================= */
+
+function getDir(a, b) {
+
+    const dx = b.lon - a.lon;
+    const dy = b.lat - a.lat;
+
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+
+    const north = dy > 0;
+    const east = dx > 0;
+
+    const SMALL = 0.8;
+
+    if (absY < SMALL && absX >= SMALL) {
+        return east ? "➡️" : "⬅️";
+    }
+
+    if (absX < SMALL && absY >= SMALL) {
+        return north ? "⬆️" : "⬇️";
+    }
+
+    if (north && east) return "↗️";
+    if (north && !east) return "↖️";
+    if (!north && east) return "↘️";
+    return "↙️";
+}
+
+/* =========================
+   📦 HINTS
+   ========================= */
+
+const hintData = [
+["🌍 Continent", () => target.continent],
+["🏳️ Country", () => target.country],
+["🚗 Dealership", () => target.dealership.exists ? `Yes (${target.dealership.vehicles})` : "No"],
+["✈️ Type", () => target.airportType],
+["📍 Closest", () => target.closestAirport],
+["🖼️ Image", () => `<img src="${target.image}" width="100%">`]
+];
+
+const hintDiv = document.getElementById("hints");
+
+hintData.forEach((h, i) => {
+    let box = document.createElement("div");
+    box.className = "hintBox";
+    box.id = "hint" + i;
+    box.innerHTML = `<b>${h[0]}</b><br>???`;
+    hintDiv.appendChild(box);
+});
+
+/* =========================
+   🎮 GUESS FUNCTION
+   ========================= */
+
+function guess() {
+
+    if (gameOver) return;
+
+    const input = document.getElementById("guessInput");
+    const val = input.value.toLowerCase().trim();
+    if (!val) return;
+
+    attempts++;
+    boxes[attempts - 1].classList.add("used");
+
+    const g = airports.find(a =>
+        a.name.toLowerCase() === val ||
+        a.code.toLowerCase() === val
+    );
+
+    const log = document.getElementById("log");
+    let div = document.createElement("div");
+
+    if (!g) {
+        div.innerHTML = "❌ Invalid";
+    }
+
+    else if (g.code !== target.code) {
+        div.innerHTML = `❌ ${g.name} ${getDir(g, target)}`;
+    }
+
+    else {
+        div.innerHTML = `✅ Correct! ${target.name}`;
+        boxes.forEach(b => b.classList.add("correct"));
+
+        gameOver = true;
+        input.disabled = true;
+    }
+
+    log.appendChild(div);
+
+    /* 📦 unlock hint */
+    let i = attempts - 1;
+    if (i < hintData.length) {
+        let box = document.getElementById("hint" + i);
+        box.classList.add("unlocked");
+        box.innerHTML = `<b>${hintData[i][0]}</b><br>${hintData[i][1]()}`;
+    }
+
+    /* 💀 lose */
+    if (attempts >= MAX && !gameOver) {
+        gameOver = true;
+
+        let end = document.createElement("div");
+        end.innerHTML = `💀 Answer: ${target.name}`;
+        log.appendChild(end);
+
+        input.disabled = true;
+    }
+
+    input.value = "";
+    selectedFromDropdown = false;
+}
+
+/* =========================
+   ⌨️ ENTER KEY (2 STEP)
+   ========================= */
+
+const input = document.getElementById("guessInput");
+const sug = document.getElementById("suggestions");
+
+input.addEventListener("keydown", e => {
+
+    if (e.key === "Enter") {
+
+        const suggestions = document.querySelectorAll(".suggestion");
+
+        if (!selectedFromDropdown && suggestions.length > 0) {
+            input.value = suggestions[0].textContent;
+            selectedFromDropdown = true;
+            return;
+        }
+
+        guess();
+    }
+});
+
+/* =========================
+   📍 DROPDOWN
+   ========================= */
+
+function render() {
+
+    sug.innerHTML = "";
+    let v = input.value.toLowerCase();
+
+    selectedFromDropdown = false;
+
+    const list = airports.filter(a =>
+        a.name.toLowerCase().startsWith(v) ||
+        a.code.toLowerCase().startsWith(v)
+    );
+
+    list.forEach(a => {
+
+        let d = document.createElement("div");
+        d.className = "suggestion";
+        d.textContent = a.name;
+
+        d.onclick = () => {
+            input.value = a.name;
+            sug.innerHTML = "";
+            selectedFromDropdown = true;
+        };
+
+        sug.appendChild(d);
+    });
+}
+
+input.addEventListener("input", render);
+input.addEventListener("focus", render);
+
+document.addEventListener("click", e => {
+    if (e.target !== input && !sug.contains(e.target)) {
+        sug.innerHTML = "";
+    }
+});
+
+</script>
+
+</body>
+</html>
+    
+  </body>
+  
+</html>
